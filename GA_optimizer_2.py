@@ -1,7 +1,9 @@
 import random
+import pickle
 import math
 import numpy as np
 import csv
+import matplotlib.pyplot as plt
 
 CP_info = []
 with open("CP_info.csv", "r") as file:
@@ -11,7 +13,17 @@ with open("CP_info.csv", "r") as file:
         CP_info.append(row_int)
 #CP_info:[0-31+1]*[0-31+1]の2次元リスト
 
-num_vehicle:int = 3
+with open('opu_new.pickle', 'rb') as f:
+    mapper = pickle.load(f)
+    print("test.")
+
+nodes = mapper.default_targets
+START_POINT = mapper.starting_point[0]
+nodes.append(START_POINT)
+#CP:0-31,START:32
+e_path = mapper.paths
+
+num_vehicle:int = 2
 num_visit:int = 50
 num_cities:int = 32
 
@@ -135,12 +147,49 @@ def mutation(parent):
                 mutated[i][j] = random.randint(0,num_cities)
     return mutated
 
+#経路の可視化
+def show_route(path,vehicles):
+    color_list = ["r","b","g","y","m","c","k","w"]
+    fig = plt.figure()
+    route_index = [] #経路を2重リストから1重リストへ
+    for i in range(len(path)):
+        route_index.extend(path[i])
+        route_index.pop()
+    
+    for i in range(len(path)):
+        route = []
+        for j in range(len(path[i])-1):
+        #CP番号→座標
+            start = nodes[path[i][j]]
+            goal = nodes[path[i][j+1]]
+        #移動ルートをrouteに追加
+            if start != goal:
+                temp_route = e_path[(start, goal)][0]
+                route.extend(temp_route)
+                route.pop()
+            #データをxとyに分割
+        x = [point[0] for point in route]
+        y = [point[1] for point in route]
+    # 散布図をプロット
+        plt.scatter(x, y, s=2, marker='.', c=color_list[i])
+    
+    plt.title('Surveilance Route')
+    plt.xlabel('X-axis')
+    plt.ylabel('Y-axis')
+    # グリッドを表示
+    plt.grid(True)
+
+    # グラフを表示
+    plt.show()
+    return
+
 #ここから実行本体
 print('Start.')
 now_genes = generate_individual(num_vehicle, num_visit, population_size, num_cities)
 
 best = 10000
 a = 1
+fitness = []
 while a <= generations:
     path = rebuilding(now_genes) #デコーディング
     genes_fitness = evaluate_fitness(path) #適応度の計算
@@ -151,6 +200,9 @@ while a <= generations:
     best_individual = now_genes[best_individual_index]
     best_path = path[best_individual_index]
     best_fitness = genes_fitness[0][1]
+    temp_fitness = (a, best_fitness)
+    fitness.append(temp_fitness)
+
 
     #評価値を更新したら表示
     if best_fitness < best:
@@ -179,9 +231,19 @@ while a <= generations:
     #next_genesをnow_genesに置き換え
     now_genes = next_genes
     a += 1
+#適応度推移のグラフ
+x0 = [point[0] for point in fitness]
+y0 = [point[1] for point in fitness]
+plt.scatter(x0, y0)
+plt.title('Fitness')
+plt.xlabel('X-axis')
+plt.ylabel('Y-axis')
+plt.grid(True)
+plt.show()
 
-#最良な解を出力する   
-print(best_solution) 
+#最良な解を出力する
+print(best_solution)
+show_route(best_solution, num_vehicle)
 print('End.')    
 
 
