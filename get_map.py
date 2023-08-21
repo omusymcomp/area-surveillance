@@ -21,8 +21,8 @@ x = [point[0] for point in nodes]
 y = [point[1] for point in nodes]
 
 # 都市の通る順番で線を描画
-for i in range(len(nodes) - 1):
-    plt.plot([nodes[i][0], nodes[i + 1][0]], [nodes[i][1], nodes[i + 1][1]], 'b-')
+#for i in range(len(nodes) - 1):
+    #plt.plot([nodes[i][0], nodes[i + 1][0]], [nodes[i][1], nodes[i + 1][1]], 'b-')
 
 # 散布図をプロット
 plt.scatter(x, y)

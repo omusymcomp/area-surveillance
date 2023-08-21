@@ -34,9 +34,7 @@ mu = 0.001279214
 population_size:int = 30
 generations = 1000
 crossover_rate = 0.5
-crossover_rate2 = 0.5
-mutation_rate = 0.9
-mutation_rate2 = 0.05
+mutation_rate = 0.05
 
 #初期個体生成
 #各個体は1-32のランダム順列(経路長：台数*50)
@@ -114,14 +112,15 @@ def evaluate_fitness(genes):
                 uncertainty_list.append(u/max_time)
             #不確かさの平均
             uncertainty = np.mean(uncertainty_list)
+            #積の平均にする場合
+            #uncertainty = math.pow(math.prod(uncertainty_list), 1/len(uncertainty_list))
+            #最悪値にする場合
+            #uncertainty = max(uncertainty_list)
         evaluated_data[i] = uncertainty
     #評価順にソート()不確かさの小さい順
     evaluated_sorted = sorted(evaluated_data.items(), key = lambda x :x[1])
     return evaluated_sorted #[(個体番号0-29, 評価値),...]が昇順にソートされたリスト(中身はタプル)
 
-def elite_selection(population, fitness, index):
-    elite = population[fitness[index][0]]
-    return elite
 
 #2点交叉
 def crossover(parent1, parent2):
@@ -129,7 +128,7 @@ def crossover(parent1, parent2):
     child2 = [p2[:] for p2 in parent2]
     for i in range(len(parent1)):
         part_rate = random.random()
-        if part_rate < crossover_rate2:
+        if part_rate < crossover_rate:
             gene_length = len(parent1[i])
             crossover_point1 = random.randint(0, gene_length - 1)
             crossover_point2 = random.randint(crossover_point1, gene_length - 1)
@@ -143,12 +142,17 @@ def mutation(parent):
     mutated = parent
     for i in range(len(mutated)):
         for j in range(len(mutated[i])):
-            if random.random() < mutation_rate2:
+            if random.random() < mutation_rate:
                 mutated[i][j] = random.randint(0,num_cities)
     return mutated
 
+#エリート保存
+def elite_selection(population, fitness, index):
+    elite = population[fitness[index][0]]
+    return elite
+
 #経路の可視化
-def show_route(path,vehicles):
+def show_route(path):
     color_list = ["r","b","g","y","m","c","k","w"]
     fig = plt.figure()
     route_index = [] #経路を2重リストから1重リストへ
@@ -171,7 +175,7 @@ def show_route(path,vehicles):
         x = [point[0] for point in route]
         y = [point[1] for point in route]
     # 散布図をプロット
-        plt.scatter(x, y, s=2, marker='.', c=color_list[i])
+        plt.scatter(x, y, s=1, marker='.', c=color_list[i])
     
     plt.title('Surveilance Route')
     plt.xlabel('X-axis')
@@ -212,6 +216,8 @@ while a <= generations:
     
     #世代更新
     next_genes = []
+    #エリート保存
+    next_genes.append(best_individual)
     childs = 0
 
     while childs < population_size:
@@ -229,12 +235,13 @@ while a <= generations:
 
         childs+=2
     #next_genesをnow_genesに置き換え
+    del next_genes[-1]
     now_genes = next_genes
     a += 1
 #適応度推移のグラフ
 x0 = [point[0] for point in fitness]
 y0 = [point[1] for point in fitness]
-plt.scatter(x0, y0)
+plt.scatter(x0, y0, s=1)
 plt.title('Fitness')
 plt.xlabel('X-axis')
 plt.ylabel('Y-axis')
@@ -243,7 +250,7 @@ plt.show()
 
 #最良な解を出力する
 print(best_solution)
-show_route(best_solution, num_vehicle)
+show_route(best_solution)
 print('End.')    
 
 
