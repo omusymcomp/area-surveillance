@@ -12,6 +12,8 @@ u = ((t) + ((1/mu) * math.exp(-mu*t)) - 1/mu)/t
 print(math.exp(-mu*t))
 print(u)
 
+
+
 '''
 def list_test(n):
     child1 = [n,3,4]

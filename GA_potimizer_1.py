@@ -5,28 +5,97 @@ import numpy as np
 import csv
 import matplotlib.pyplot as plt
 
-CP_info = []
-with open("CP_info.csv", "r") as file:
-    csv_reader = csv.reader(file)
-    for row in csv_reader:
-        row_int = [int(item) for item in row]
-        CP_info.append(row_int)
-#CP_info:[0-31+1]*[0-31+1]の2次元リスト
+#作成したマップで回す場合
+global_seed = random.random()
 
-with open('opu_new.pickle', 'rb') as f:
-    mapper = pickle.load(f)
-    print("test.")
+# #フィールド設定
+height = 300 #縦
+width = 300 #横
+num_cities = 32
+depot = (150, 150)
 
-nodes = mapper.default_targets
-START_POINT = mapper.starting_point[0]
-nodes.append(START_POINT)
-#CP:0-31,START:32
-e_path = mapper.paths
 
+#ランダムに都市を生成する(一様分布)
+def generate_cities(height, width, num_cities):
+    nodes = [-1] * (num_cities + 1)
+    random.seed(114)
+    for i in range(num_cities):
+        x = random.randint(0,width)
+        y = random.randint(0,height)
+        nodes[i] = (x, y)
+    nodes[num_cities] = depot
+    return nodes
+
+nodes = generate_cities(height, width, num_cities)
+
+#都市間の経路長を計算
+def Chebyshev_distance(nodes):
+    CP_info = []
+    for i in range(len(nodes)):
+        temp_row = []
+        for j in range(len(nodes)):
+            temp_row.append(max(abs(nodes[i][0]-nodes[j][0]), abs(nodes[i][1]-nodes[j][1]))) #2CP間のチェビシェフ距離
+        CP_info.append(temp_row)
+    return CP_info
+
+CP_info = Chebyshev_distance(nodes)
+
+#経路を1マスずつ
+def create_routes(nodes):
+    e_path = {}
+    for start in nodes:
+        for goal in nodes:
+            if start != goal:
+                deltaX = goal[0] - start[0]
+                deltaY = goal[1] - start[1]
+                delta_dif = abs(abs(deltaY) - abs(deltaX)) #斜め移動しない分
+                path = []
+                temp = [start[0], start[1]] #タプルは更新不可なので、リストで扱う
+                while int(temp[0]) != goal[0] and int(temp[1]) != goal[1]: #斜め移動
+                    path.append((int(temp[0]), int(temp[1])))
+                    temp[0] += deltaX/abs(deltaX)
+                    temp[1] += deltaY/abs(deltaY)
+                
+                if int(temp[0]) == goal[0]:
+                    path.append((int(temp[0]), int(temp[1])))
+                    for i in range(delta_dif):
+                        temp[1] += deltaY/abs(deltaY)
+                        path.append((int(temp[0]), int(temp[1])))
+                
+                elif int(temp[1]) == goal[1]:
+                    path.append((int(temp[0]), int(temp[1])))
+                    for i in range(delta_dif):
+                        temp[0] += deltaX/abs(deltaX)
+                        path.append((int(temp[0]), int(temp[1])))
+                e_path[(start, goal)] = path, len(path)
+    return e_path
+
+e_path = create_routes(nodes)
+print("Created.")
+
+#中百舌鳥キャンパスで回す場合
+
+# CP_info = []
+# with open("CP_info.csv", "r") as file:
+#     csv_reader = csv.reader(file)
+#     for row in csv_reader:
+#         row_int = [int(item) for item in row]
+#         CP_info.append(row_int)
+# #CP_info:[0-31+1]*[0-31+1]の2次元リスト
+
+# with open('opu_new.pickle', 'rb') as f:
+#     mapper = pickle.load(f)
+#     print("test.")
+
+# nodes = mapper.default_targets
+# START_POINT = mapper.starting_point[0]
+# nodes.append(START_POINT)
+# #CP:0-31,START:32
+# e_path = mapper.paths
 
 num_vehicle:int = 2
 num_visit:int = 50
-num_cities:int = 32
+num_cities:int = len(nodes) - 1
 
 battery_capacity:int = 3000
 
@@ -37,27 +106,19 @@ generations = 1000
 crossover_rate = 0.5
 mutation_rate = 0.05
 
-#経路を分かりやすく表示
-Route = list[int]
-AllRobotRoutes = list[Route]
-
 #初期個体生成
 #各個体は1-32のランダム順列(経路長：台数*50)
-def generate_individual() -> list[AllRobotRoutes] :
-    genes: list[AllRobotRoutes] = []
-    #提案手法
-    for g in range(population_size):
-        one_gene: AllRobotRoutes = []
-        for _ in range(num_vehicle):
-            one_gene.append([random.randint(0, num_cities-1) for _ in range(num_visit)])
+def generate_individual(vehicle, visit, population, cities):
+    genes = []
+    for g in range(population):
+        one_gene = []
+        for h in range(vehicle):
+            one_gene.append([random.randint(0,cities-1)for i in range(visit)])
         genes.append(one_gene)
-    
-    #従来の各CPを一度ずつ通る方法(後で実装)
-    
     return genes
 
 #充電の考慮：拠点に戻るタイミング(32)の挿入
-def go_depot(route: Route, capacity) -> Route:
+def go_depot(route, capacity):
     new_route = [num_cities] #拠点からスタート
     temp = num_cities
     now_battery = capacity
@@ -77,38 +138,31 @@ def go_depot(route: Route, capacity) -> Route:
 
 #genesからrouteへ変換
 #1.各個体ごとに分割, 2.各車両ごとに分割, 3.充電ごとに分割
-def rebuilding(genes: list[AllRobotRoutes]) -> list[AllRobotRoutes]:
+def rebuilding(path_origin):
     battery_capacity = 3000
-    
-    rebuilded_path: list[AllRobotRoutes] = []
-    for all_robot_routes in genes:
+    rebuilded_path = []
+    for i in range(len(path_origin)):
         rebuilded_part = []
-        for route in all_robot_routes:
-            rebuilded_part.append(go_depot(route, battery_capacity))
+        for j in range(len(path_origin[i])):
+            rebuilded_part.append(go_depot(path_origin[i][j],battery_capacity))
         rebuilded_path.append(rebuilded_part)        
     return rebuilded_path
 
-    # この書き方のほうがシンプル（分かりにくいかも？）
-    # return [
-    #     [go_depot(route, battery_capacity) for route in all_robot_routes]
-    #     for all_robot_routes in genes
-    # ]
-
-def evaluate_fitness(genes: list[AllRobotRoutes]):
+def evaluate_fitness(genes):
     evaluated_data = dict()
     #各個体に関するvisit_list
-    for i_gene, gene in enumerate(genes):
+    for i in range(len(genes)):
         visit_list = [[] for _ in range(num_cities+1)]
         max_time = 0
-        for j in range(len(gene)):#個体内の各車両について
+        for j in range(len(genes[i])):#個体内の各車両について
             time = 0
-            start = num_cities
-            for k in range(len(gene[j])):
-                goal = genes[i][j][k]
-                time += CP_info[start][goal]
+            s = num_cities
+            for k in range(len(genes[i][j])):
+                g = genes[i][j][k]
+                time += CP_info[s][g]
                 #visit_listを各車両ごとに追加
-                visit_list[goal].append(time)
-                start = goal
+                visit_list[g].append(time)
+                s = g
             if time > max_time: #車両に割り当てられた経路長の最大を記憶
                 max_time = time
         uncertainty_list = []
@@ -126,16 +180,26 @@ def evaluate_fitness(genes: list[AllRobotRoutes]):
                     now = visit_list[l][m]
                 u += (max_time-now) + (1/mu) * math.exp(-mu*(max_time-now)) - 1/mu
                 uncertainty_list.append(u/max_time)
-            #不確かさの平均
-            uncertainty = np.mean(uncertainty_list)
-            #積の平均にする場合
-            #uncertainty = math.pow(math.prod(uncertainty_list), 1/len(uncertainty_list))
-            #最悪値にする場合
-            #uncertainty = max(uncertainty_list)
-        evaluated_data[i_gene] = uncertainty
+        #不確かさの平均
+        uncertainty = np.mean(uncertainty_list)
+        #積の平均にする場合
+        #uncertainty = math.pow(math.prod(uncertainty_list), 1/len(uncertainty_list))
+        #最悪値にする場合
+        #uncertainty = max(uncertainty_list)
+        evaluated_data[i] = uncertainty, max_time
     #評価順にソート()不確かさの小さい順
     evaluated_sorted = sorted(evaluated_data.items(), key = lambda x :x[1])
-    return evaluated_sorted #[(個体番号0-29, 評価値),...]が昇順にソートされたリスト(中身はタプル)
+    evaluated_converted = []
+
+    for item in evaluated_sorted:
+        if isinstance(item[1], tuple):
+            #ネストされたタプルの要素を展開して新しいタプルを作成し、リストに追加
+            new_tuple = (item[0], item[1][0], item[1][1])
+            evaluated_converted.append(new_tuple)
+        else:
+            evaluated_converted.append(item)
+
+    return evaluated_converted #[(個体番号0-29, 評価値),...]が昇順にソートされたリスト(中身はタプル)
 
 
 #2点交叉
@@ -196,20 +260,27 @@ def show_route(path):
     plt.title('Surveilance Route')
     plt.xlabel('X-axis')
     plt.ylabel('Y-axis')
-    # グリッドを表示
+    #グリッドを表示
     plt.grid(True)
 
-    # グラフを表示
-    plt.show()
+    #グラフを保存
+    fig.savefig('out/route.png', dpi=300)
+    #グラフを表示
+    #plt.show()
     return
 
 #ここから実行本体
 print('Start.')
-now_genes: list[AllRobotRoutes] = generate_individual()
+now_genes = generate_individual(num_vehicle, num_visit, population_size, num_cities)
+random.seed(global_seed)
 
 best = 10000
 a = 1
 fitness = []
+
+#解の更新を保存
+update_history = []
+
 while a <= generations:
     path = rebuilding(now_genes) #デコーディング
     genes_fitness = evaluate_fitness(path) #適応度の計算
@@ -220,15 +291,21 @@ while a <= generations:
     best_individual = now_genes[best_individual_index]
     best_path = path[best_individual_index]
     best_fitness = genes_fitness[0][1]
-    temp_fitness = (a, best_fitness)
-    fitness.append(temp_fitness)
-
+    best_length = genes_fitness[0][2]
 
     #評価値を更新したら表示
     if best_fitness < best:
         best = best_fitness
         best_solution = best_path
-        print("Gen.", a,':', best_fitness)
+        update_history.append([a, best_fitness, best_length])
+        print("Gen.", a,':', best_fitness, best_length)
+    temp_fitness_and_length = (a, best)
+    fitness.append(temp_fitness_and_length)
+    
+    #最終世代を表示
+    if a == generations:
+        update_history.append([a, best_fitness, best_length])
+        print("Gen.", a, ':', best_fitness, best_length)
     
     #世代更新
     next_genes = []
@@ -236,8 +313,12 @@ while a <= generations:
     next_genes.append(best_individual)
     childs = 0
 
+    #個体番号のリストを作成
+    individual_numbers = [item[0] for item in genes_fitness]
+
     while childs < population_size:
-        parents_num = random.choices(genes_fitness[0], k=2, weights = genes_fitness[1])
+        #不確実度を選択確率として使用し、ランダムに2つの個体番号を選択
+        parents_num = random.choices(individual_numbers, k=2, weights=[1/item[1] for item in genes_fitness])
         num1 = int(parents_num[0])
         num2 = int(parents_num[1])
         #2点交叉
@@ -254,21 +335,27 @@ while a <= generations:
     del next_genes[-1]
     now_genes = next_genes
     a += 1
+#更新をcsvに出力
+file = open('out/output.csv', mode='w', newline='')
+writer = csv.writer(file)
+try:
+    writer.writerows(update_history)
+    writer.writerows(best_solution)
+finally:
+    file.close()
+
 #適応度推移のグラフ
 x0 = [point[0] for point in fitness]
 y0 = [point[1] for point in fitness]
-plt.scatter(x0, y0, s=1)
+fig, ax = plt.subplots()
 plt.title('Fitness')
 plt.xlabel('X-axis')
 plt.ylabel('Y-axis')
-plt.grid(True)
-plt.show()
+ax.plot(x0, y0)
+fig.savefig('out/graph.png', dpi=300)
+
 
 #最良な解を出力する
 print(best_solution)
 show_route(best_solution)
-print('End.')    
-
-
-
-
+print('End.')
