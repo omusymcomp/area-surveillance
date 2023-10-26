@@ -71,7 +71,7 @@ def create_routes(nodes):
     return e_path
 
 e_path = create_routes(nodes)
-print("Created.")
+# print("Created.")
 
 
 # CP_info = []
@@ -92,7 +92,7 @@ print("Created.")
 # #CP:0-31,START:32
 # e_path = mapper.paths
 
-num_vehicle:int = 2
+num_vehicle:int = 4
 num_visit:int = 50
 num_cities:int = len(nodes) - 1
 
@@ -101,7 +101,7 @@ battery_capacity:int = 3000
 mu = 0.001279214
 
 population_size:int = 30
-generations = 1000
+generations = 10000
 crossover_rate = 0.5
 mutation_rate = 0.05
 
@@ -109,6 +109,7 @@ mutation_rate = 0.05
 #各個体は1-32の並び替え順列(経路長：台数*CP数)
 def generate_individual(vehicle, visit, population, cities):
     genes = []
+    random.seed(global_seed)
     for g in range(population):
         one_gene = []
         for h in range(vehicle):

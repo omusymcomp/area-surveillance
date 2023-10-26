@@ -5,8 +5,9 @@ import numpy as np
 import csv
 import matplotlib.pyplot as plt
 
-#作成したマップで回す場合
 global_seed = random.random()
+
+# #作成したマップで回す場合
 
 # #フィールド設定
 height = 300 #縦
@@ -71,7 +72,7 @@ def create_routes(nodes):
     return e_path
 
 e_path = create_routes(nodes)
-print("Created.")
+# print("Created.")
 
 #中百舌鳥キャンパスで回す場合
 
@@ -93,7 +94,7 @@ print("Created.")
 # #CP:0-31,START:32
 # e_path = mapper.paths
 
-num_vehicle:int = 2
+num_vehicle:int = 4
 num_visit:int = 50
 num_cities:int = len(nodes) - 1
 
@@ -102,7 +103,7 @@ battery_capacity:int = 3000
 mu = 0.001279214
 
 population_size:int = 30
-generations = 1000
+generations = 10000
 crossover_rate = 0.5
 mutation_rate = 0.05
 
