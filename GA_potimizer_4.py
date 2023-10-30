@@ -5,8 +5,6 @@ import numpy as np
 import csv
 import matplotlib.pyplot as plt
 
-global_seed = random.random()
-
 # #作成したマップで回す場合
 
 # #フィールド設定
@@ -94,6 +92,8 @@ e_path = create_routes(nodes)
 # #CP:0-31,START:32
 # e_path = mapper.paths
 
+trials = 1
+
 num_vehicle:int = 4
 num_visit:int = 50
 num_cities:int = len(nodes) - 1
@@ -103,7 +103,7 @@ battery_capacity:int = 3000
 mu = 0.001279214
 
 population_size:int = 30
-generations = 10000
+generations = 1000000
 crossover_rate = 0.5
 mutation_rate = 0.05
 
@@ -239,7 +239,7 @@ def elite_selection(population, fitness, index):
     return elite
 
 #経路の可視化
-def show_route(path):
+def show_route(path, trys):
     color_list = ["r","b","g","y","m","c","k","w"]
     fig = plt.figure()
     route_index = [] #経路を2重リストから1重リストへ
@@ -271,108 +271,118 @@ def show_route(path):
     plt.grid(True)
 
     #グラフを保存
-    fig.savefig('out/route.png', dpi=300)
+    routefile_path = 'out/route' + str(num_try) + '.png'
+    fig.savefig(routefile_path, dpi=300)
     #グラフを表示
     #plt.show()
     return
 
 #ここから実行本体
 print('Start.')
-now_genes = generate_individual(num_vehicle, num_visit, population_size, num_cities)
-random.seed(global_seed)
 
-best = 10000
-a = 1
-fitness = []
+#ファイルの複数回実行
+for num_try in range(1, trials+1, 1):
+    print('Simulation' + str(num_try))
 
-#解の更新を保存
-update_history = []
-log = []
+    global_seed = random.random()
+    random.seed(global_seed)
+    now_genes = generate_individual(num_vehicle, num_visit, population_size, num_cities)
 
-while a <= generations:
-    path = rebuilding(now_genes) #デコーディング
-    genes_fitness = evaluate_fitness(path) #適応度の計算
-    #最良評価の個体を出力
-    # genes_fitness の最初のタプルから最良個体のインデックスを取得
-    best_individual_index = genes_fitness[0][0]
-    # 取得したインデックスを使って now_genes から最良個体にアクセス
-    best_individual = now_genes[best_individual_index]
-    best_path = path[best_individual_index]
-    best_fitness = genes_fitness[0][1]
-    best_length = genes_fitness[0][2]
-    log.append([a, best_fitness, best_length])
+    best = 10000
+    a = 1
+    fitness = []
 
-    #評価値を更新したら表示
-    if best_fitness < best:
-        best = best_fitness
-        best_solution = best_path
-        update_history.append([a, best_fitness, best_length])
-        print("Gen.", a,':', best_fitness, best_length)
-    temp_fitness_and_length = (a, best)
-    fitness.append(temp_fitness_and_length)
-    
-    #最終世代を表示
-    if a == generations:
-        update_history.append([a, best_fitness, best_length])
-        print("Gen.", a, ':', best_fitness, best_length)
-    
-    #世代更新
-    next_genes = []
-    #エリート保存
-    next_genes.append(best_individual)
-    childs = 0
+    #解の更新を保存
+    update_history = []
+    log = []
 
-    #個体番号のリストを作成
-    individual_numbers = [item[0] for item in genes_fitness]
+    while a <= generations:
+        path = rebuilding(now_genes) #デコーディング
+        genes_fitness = evaluate_fitness(path) #適応度の計算
+        #最良評価の個体を出力
+        # genes_fitness の最初のタプルから最良個体のインデックスを取得
+        best_individual_index = genes_fitness[0][0]
+        # 取得したインデックスを使って now_genes から最良個体にアクセス
+        best_individual = now_genes[best_individual_index]
+        best_path = path[best_individual_index]
+        best_fitness = genes_fitness[0][1]
+        best_length = genes_fitness[0][2]
+        log.append([a, best_fitness, best_length])
 
-    while childs < population_size:
-        #不確実度を選択確率として使用し、ランダムに2つの個体番号を選択
-        parents_num = random.choices(individual_numbers, k=2, weights=[1/item[1] for item in genes_fitness])
-        num1 = int(parents_num[0])
-        num2 = int(parents_num[1])
-        #2点交叉
-        child1, child2 = crossover(now_genes[num1], now_genes[num2])
-        #突然変異
-        child_mutated1 = mutation(child1)
-        child_mutated2 = mutation(child2)
+        #評価値を更新したら表示
+        if best_fitness < best:
+            best = best_fitness
+            best_solution = best_path
+            update_history.append([a, best_fitness, best_length])
+            print("Gen.", a,':', best_fitness, best_length)
+        temp_fitness_and_length = (a, best)
+        fitness.append(temp_fitness_and_length)
+        
+        #最終世代を表示
+        if a == generations:
+            update_history.append([a, best_fitness, best_length])
+            print("Gen.", a, ':', best_fitness, best_length)
+        
+        #世代更新
+        next_genes = []
+        #エリート保存
+        next_genes.append(best_individual)
+        childs = 0
 
-        next_genes.append(child1)
-        next_genes.append(child2)
+        #個体番号のリストを作成
+        individual_numbers = [item[0] for item in genes_fitness]
 
-        childs+=2
-    #next_genesをnow_genesに置き換え
-    del next_genes[-1]
-    now_genes = next_genes
-    a += 1
-#各世代のログをcsv出力
-logfile = open('logs/log3.csv', mode='w', newline='')
-writer = csv.writer(logfile)
-try:
-    writer.writerows(log)
-finally:
-    logfile.close()
+        while childs < population_size:
+            #不確実度を選択確率として使用し、ランダムに2つの個体番号を選択
+            parents_num = random.choices(individual_numbers, k=2, weights=[1/item[1] for item in genes_fitness])
+            num1 = int(parents_num[0])
+            num2 = int(parents_num[1])
+            #2点交叉
+            child1, child2 = crossover(now_genes[num1], now_genes[num2])
+            #突然変異
+            child_mutated1 = mutation(child1)
+            child_mutated2 = mutation(child2)
 
-#更新をcsvに出力
-file = open('out/output.csv', mode='w', newline='')
-writer_2 = csv.writer(file)
-try:
-    writer_2.writerows(update_history)
-    writer_2.writerows(best_solution)
-finally:
-    file.close()
+            next_genes.append(child1)
+            next_genes.append(child2)
 
-#適応度推移のグラフ
-x0 = [point[0] for point in fitness]
-y0 = [point[1] for point in fitness]
-fig, ax = plt.subplots()
-plt.title('Fitness')
-plt.xlabel('X-axis')
-plt.ylabel('Y-axis')
-ax.plot(x0, y0)
-fig.savefig('out/graph.png', dpi=300)
+            childs+=2
+        #next_genesをnow_genesに置き換え
+        del next_genes[-1]
+        now_genes = next_genes
+        a += 1
+    #各世代のログをcsv出力
+    logfile_path = 'logs/log' + str(num_try) + '.csv'
+    logfile = open(logfile_path, mode='w', newline='')
+    writer = csv.writer(logfile)
+    try:
+        writer.writerows(log)
+    finally:
+        logfile.close()
+
+    #更新をcsvに出力
+    outfile_path = 'out/output' + str(num_try) + '.csv'
+    file = open(outfile_path, mode='w', newline='')
+    writer_2 = csv.writer(file)
+    try:
+        writer_2.writerows(update_history)
+        writer_2.writerows(best_solution)
+    finally:
+        file.close()
+
+    #適応度推移のグラフ
+    x0 = [point[0] for point in fitness]
+    y0 = [point[1] for point in fitness]
+    fig, ax = plt.subplots()
+    plt.title('Fitness')
+    plt.xlabel('X-axis')
+    plt.ylabel('Y-axis')
+    ax.plot(x0, y0)
+    graph_path = 'out/graph' + str(num_try) + '.png'
+    fig.savefig(graph_path, dpi=300)
 
 
-#最良な解を出力する
-print(best_solution)
-show_route(best_solution)
+    #最良な解を出力する
+    print(best_solution)
+    show_route(best_solution, num_try)
 print('End.')
