@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import random
 import pickle
 import math
@@ -92,10 +93,10 @@ e_path = create_routes(nodes)
 # #CP:0-31,START:32
 # e_path = mapper.paths
 
-trials = 1
+trials = 20
 
 num_vehicle:int = 4
-num_visit:int = 50
+num_visit:int = 40
 num_cities:int = len(nodes) - 1
 
 battery_capacity:int = 3000

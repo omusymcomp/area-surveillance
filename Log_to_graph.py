@@ -4,7 +4,7 @@
 import matplotlib.pyplot as plt
 import csv
 
-gen = 100000
+gen = 1000000
 trials = 20
 uncertainty = [[] for i in range(gen)]
 length = [[] for i in range(gen)]
@@ -30,6 +30,8 @@ plt.title('fitness')
 plt.xlabel('generation')
 plt.ylabel('uncertainty')
 ax.plot(x, y)
+ax.set_xlim([1,gen])
+ax.set_ylim([0, 1])
 fig.savefig('logs/log_all.png', dpi=300)
 
 print('End.')
