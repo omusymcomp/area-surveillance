@@ -96,7 +96,7 @@ e_path = create_routes(nodes)
 trials = 20
 
 num_vehicle:int = 4
-num_visit:int = 40
+num_visit:int = 60
 num_cities:int = len(nodes) - 1
 
 battery_capacity:int = 3000
