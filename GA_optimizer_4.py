@@ -6,97 +6,98 @@ import numpy as np
 import csv
 import matplotlib.pyplot as plt
 
+
 # #作成したマップで回す場合
 
 # #フィールド設定
-height = 300 #縦
-width = 300 #横
-num_cities = 32
-depot = (150, 150)
+# height = 300 #縦
+# width = 300 #横
+# num_cities = 32
+# depot = (150, 150)
 
 
-#ランダムに都市を生成する(一様分布)
-def generate_cities(height, width, num_cities):
-    nodes = [-1] * (num_cities + 1)
-    random.seed(114)
-    for i in range(num_cities):
-        x = random.randint(0,width)
-        y = random.randint(0,height)
-        nodes[i] = (x, y)
-    nodes[num_cities] = depot
-    return nodes
+# #ランダムに都市を生成する(一様分布)
+# def generate_cities(height, width, num_cities):
+#     nodes = [-1] * (num_cities + 1)
+#     random.seed(114)
+#     for i in range(num_cities):
+#         x = random.randint(0,width)
+#         y = random.randint(0,height)
+#         nodes[i] = (x, y)
+#     nodes[num_cities] = depot
+#     return nodes
 
-nodes = generate_cities(height, width, num_cities)
+# nodes = generate_cities(height, width, num_cities)
 
-#都市間の経路長を計算
-def Chebyshev_distance(nodes):
-    CP_info = []
-    for i in range(len(nodes)):
-        temp_row = []
-        for j in range(len(nodes)):
-            temp_row.append(max(abs(nodes[i][0]-nodes[j][0]), abs(nodes[i][1]-nodes[j][1]))) #2CP間のチェビシェフ距離
-        CP_info.append(temp_row)
-    return CP_info
+# #都市間の経路長を計算
+# def Chebyshev_distance(nodes):
+#     CP_info = []
+#     for i in range(len(nodes)):
+#         temp_row = []
+#         for j in range(len(nodes)):
+#             temp_row.append(max(abs(nodes[i][0]-nodes[j][0]), abs(nodes[i][1]-nodes[j][1]))) #2CP間のチェビシェフ距離
+#         CP_info.append(temp_row)
+#     return CP_info
 
-CP_info = Chebyshev_distance(nodes)
+# CP_info = Chebyshev_distance(nodes)
 
-#経路を1マスずつ
-def create_routes(nodes):
-    e_path = {}
-    for start in nodes:
-        for goal in nodes:
-            if start != goal:
-                deltaX = goal[0] - start[0]
-                deltaY = goal[1] - start[1]
-                delta_dif = abs(abs(deltaY) - abs(deltaX)) #斜め移動しない分
-                path = []
-                temp = [start[0], start[1]] #タプルは更新不可なので、リストで扱う
-                while int(temp[0]) != goal[0] and int(temp[1]) != goal[1]: #斜め移動
-                    path.append((int(temp[0]), int(temp[1])))
-                    temp[0] += deltaX/abs(deltaX)
-                    temp[1] += deltaY/abs(deltaY)
+# #経路を1マスずつ
+# def create_routes(nodes):
+#     e_path = {}
+#     for start in nodes:
+#         for goal in nodes:
+#             if start != goal:
+#                 deltaX = goal[0] - start[0]
+#                 deltaY = goal[1] - start[1]
+#                 delta_dif = abs(abs(deltaY) - abs(deltaX)) #斜め移動しない分
+#                 path = []
+#                 temp = [start[0], start[1]] #タプルは更新不可なので、リストで扱う
+#                 while int(temp[0]) != goal[0] and int(temp[1]) != goal[1]: #斜め移動
+#                     path.append((int(temp[0]), int(temp[1])))
+#                     temp[0] += deltaX/abs(deltaX)
+#                     temp[1] += deltaY/abs(deltaY)
                 
-                if int(temp[0]) == goal[0]:
-                    path.append((int(temp[0]), int(temp[1])))
-                    for i in range(delta_dif):
-                        temp[1] += deltaY/abs(deltaY)
-                        path.append((int(temp[0]), int(temp[1])))
+#                 if int(temp[0]) == goal[0]:
+#                     path.append((int(temp[0]), int(temp[1])))
+#                     for i in range(delta_dif):
+#                         temp[1] += deltaY/abs(deltaY)
+#                         path.append((int(temp[0]), int(temp[1])))
                 
-                elif int(temp[1]) == goal[1]:
-                    path.append((int(temp[0]), int(temp[1])))
-                    for i in range(delta_dif):
-                        temp[0] += deltaX/abs(deltaX)
-                        path.append((int(temp[0]), int(temp[1])))
-                e_path[(start, goal)] = path, len(path)
-    return e_path
+#                 elif int(temp[1]) == goal[1]:
+#                     path.append((int(temp[0]), int(temp[1])))
+#                     for i in range(delta_dif):
+#                         temp[0] += deltaX/abs(deltaX)
+#                         path.append((int(temp[0]), int(temp[1])))
+#                 e_path[(start, goal)] = path, len(path)
+#     return e_path
 
-e_path = create_routes(nodes)
-# print("Created.")
+# e_path = create_routes(nodes)
+# # print("Created.")
 
 #中百舌鳥キャンパスで回す場合
 
-# CP_info = []
-# with open("CP_info.csv", "r") as file:
-#     csv_reader = csv.reader(file)
-#     for row in csv_reader:
-#         row_int = [int(item) for item in row]
-#         CP_info.append(row_int)
-# #CP_info:[0-31+1]*[0-31+1]の2次元リスト
+CP_info = []
+with open("CP_info.csv", "r") as file:
+    csv_reader = csv.reader(file)
+    for row in csv_reader:
+        row_int = [int(item) for item in row]
+        CP_info.append(row_int)
+#CP_info:[0-31+1]*[0-31+1]の2次元リスト
 
-# with open('opu_new.pickle', 'rb') as f:
-#     mapper = pickle.load(f)
-#     print("test.")
+with open('opu_new.pickle', 'rb') as f:
+    mapper = pickle.load(f)
+    print("test.")
 
-# nodes = mapper.default_targets
-# START_POINT = mapper.starting_point[0]
-# nodes.append(START_POINT)
-# #CP:0-31,START:32
-# e_path = mapper.paths
+nodes = mapper.default_targets
+START_POINT = mapper.starting_point[0]
+nodes.append(START_POINT)
+#CP:0-31,START:32
+e_path = mapper.paths
 
 trials = 20
 
-num_vehicle:int = 4
-num_visit:int = 60
+num_vehicle:int = 2
+num_visit:int = 40
 num_cities:int = len(nodes) - 1
 
 battery_capacity:int = 3000
@@ -379,6 +380,7 @@ for num_try in range(1, trials+1, 1):
     plt.xlabel('X-axis')
     plt.ylabel('Y-axis')
     ax.plot(x0, y0)
+    ax.axis([0,1000000,0,1])
     graph_path = 'out/graph' + str(num_try) + '.png'
     fig.savefig(graph_path, dpi=300)
 
