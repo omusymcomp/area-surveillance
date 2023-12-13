@@ -5,7 +5,7 @@ import math
 import numpy as np
 import csv
 import matplotlib.pyplot as plt
-
+#提案手法
 
 # #作成したマップで回す場合
 
