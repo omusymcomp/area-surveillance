@@ -332,6 +332,7 @@ for num_try in range(1, trials+1, 1):
         best_path = path[best_individual_index]
         best_fitness = genes_fitness[0][1]
         best_length = genes_fitness[0][2]
+        log.append([a, best_fitness, best_length])
 
 
         #評価値を更新したら表示
@@ -395,21 +396,21 @@ for num_try in range(1, trials+1, 1):
     finally:
         file.close()
 
-#適応度推移のグラフ
-x0 = [point[0] for point in fitness]
-y0 = [point[1] for point in fitness]
-fig, ax = plt.subplots()
-plt.title('Fitness')
-plt.xlabel('X-axis')
-plt.ylabel('Y-axis')
-ax.plot(x0, y0)
-ax.axis([0,1000000,0,1])
-graph_path = 'out/graph' + str(num_try) + '.png'
-fig.savefig(graph_path, dpi=300)
-#plt.show()
+    #適応度推移のグラフ
+    x0 = [point[0] for point in fitness]
+    y0 = [point[1] for point in fitness]
+    fig, ax = plt.subplots()
+    plt.title('Fitness')
+    plt.xlabel('X-axis')
+    plt.ylabel('Y-axis')
+    ax.plot(x0, y0)
+    ax.axis([0,1000000,0,1])
+    graph_path = 'out/graph' + str(num_try) + '.png'
+    fig.savefig(graph_path, dpi=300)
+    #plt.show()
 
 
-#最良な解を出力する
-print(best_solution)
-show_route(best_solution)
+    #最良な解を出力する
+    print(best_solution)
+    show_route(best_solution)
 print('End.')
