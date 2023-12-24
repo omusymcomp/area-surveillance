@@ -32,6 +32,7 @@ plt.ylabel('uncertainty')
 ax.plot(x, y)
 ax.set_xlim([1,gen])
 ax.set_ylim([0, 1])
+ax.axis([0,1000000,0,1])
 fig.savefig('logs/log_all.png', dpi=300)
 
 print('End.')

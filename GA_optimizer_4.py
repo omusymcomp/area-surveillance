@@ -94,7 +94,7 @@ nodes.append(START_POINT)
 #CP:0-31,START:32
 e_path = mapper.paths
 
-trials = 20
+trials = 1
 
 num_vehicle:int = 2
 num_visit:int = 40
@@ -105,7 +105,7 @@ battery_capacity:int = 3000
 mu = 0.001279214
 
 population_size:int = 30
-generations = 1000000
+generations = 1000
 crossover_rate = 0.5
 mutation_rate = 0.05
 

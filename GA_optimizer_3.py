@@ -4,23 +4,30 @@ import math
 import numpy as np
 import csv
 import matplotlib.pyplot as plt
+from copy import deepcopy
 
 #従来手法
 
 #作成したマップで回す場合
 global_seed = random.random()
 
-# #フィールド設定
-height = 300 #縦
-width = 300 #横
+# #フィールド設定(小)：seed 114
+# height = 300 #縦
+# width = 300 #横
+# num_cities = 32
+# depot = (150, 150)
+
+#フィールド設定(中)：seed 1
+height = 600
+width = 600
 num_cities = 32
-depot = (150, 150)
+depot = (300, 300)
 
 
 #ランダムに都市を生成する(一様分布)
 def generate_cities(height, width, num_cities):
     nodes = [-1] * (num_cities + 1)
-    random.seed(114)
+    random.seed(1)
     for i in range(num_cities):
         x = random.randint(0,width)
         y = random.randint(0,height)
@@ -94,7 +101,7 @@ e_path = create_routes(nodes)
 # #CP:0-31,START:32
 # e_path = mapper.paths
 
-trials = 2
+trials = 20
 
 num_vehicle:int = 2
 num_visit:int = 30
@@ -366,11 +373,11 @@ for num_try in range(1, trials+1, 1):
             #2点交叉
             child1, child2 = crossover(now_genes[num1], now_genes[num2])
             #突然変異
-            child_mutated1 = mutation(child1)
-            child_mutated2 = mutation(child2)
+            child_mutated1 = mutation(deepcopy(child1))
+            child_mutated2 = mutation(deepcopy(child2))
 
-            next_genes.append(child1)
-            next_genes.append(child2)
+            next_genes.append(child_mutated1)
+            next_genes.append(child_mutated2)
 
             childs+=2
         #next_genesをnow_genesに置き換え

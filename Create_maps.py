@@ -3,11 +3,11 @@ import math
 import matplotlib.pyplot as plt
 
 #フィールド設定
-height = 300 #縦
-width = 300 #横
+height = 600 #縦
+width = 600 #横
 num_cities = 32
 
-seed = 114
+seed = 1
 
 #ランダムに都市を生成する
 def generate_cities(height, width, num_cities, seed):
